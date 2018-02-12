@@ -6,19 +6,32 @@
 describe('GGRC.Components.addTemplateField', function () {
   'use strict';
 
-  let Component;  // the component under test
+  let Component; // the component under test
 
   beforeAll(function () {
     Component = GGRC.Components.get('addTemplateField');
   });
 
   describe('addField() method', function () {
-    let addField;  // the method under test
+    let addField; // the method under test
     let $el;
     let ev;
     let scope;
     let parentScope;
     let scope_;
+    let modelAttrDefs = GGRC.model_attr_defs;
+    let customAttrDefs = GGRC.custom_attr_defs;
+
+    beforeAll(function () {
+      GGRC.model_attr_defs = {
+        Assessment: [{display_name: 'reserved_word'}],
+      };
+
+      GGRC.custom_attr_defs = [{
+        title: 'reserved_word',
+        definition_type: 'assessment',
+      }];
+    });
 
     beforeEach(function () {
       parentScope = {
@@ -41,7 +54,13 @@ describe('GGRC.Components.addTemplateField', function () {
         isDublicateTitle: scope_.isDublicateTitle.bind(scope),
         isEmptyTitle: scope_.isEmptyTitle.bind(scope),
         isInvalidValues: scope_.isInvalidValues.bind(scope),
+        isReservedTitle: scope_.isReservedTitle.bind(scope),
       });
+    });
+
+    afterAll(function () {
+      GGRC.model_attr_defs = modelAttrDefs;
+      GGRC.custom_attr_defs = customAttrDefs;
     });
 
     it('does not require the "values" field to add a field of type Map:Person',
@@ -95,7 +114,7 @@ describe('GGRC.Components.addTemplateField', function () {
         }, 3);
       }
     );
-    it('requires the "values" field to add a field of type Text',
+    it('requires the "values" field to add a field of type Text ',
       function (done) {
         let selectedObj = new can.Map({
           title: 'External Reviewer',
@@ -128,7 +147,7 @@ describe('GGRC.Components.addTemplateField', function () {
   });
 
   describe('isEmptyTitle() method', function () {
-    let isEmptyTitle;  // the method under test
+    let isEmptyTitle; // the method under test
     let result;
     let selectedTitle;
 
@@ -158,8 +177,39 @@ describe('GGRC.Components.addTemplateField', function () {
     );
   });
 
+  describe('isReservedWord() method', function () {
+    let isReservedWord;
+
+    beforeAll(function () {
+      let parentScope = {
+        attr: function () {
+          return {};
+        },
+      };
+
+      GGRC.model_attr_defs = {
+        Assessment: [{display_name: 'reserved_word'}, {}],
+      };
+
+      GGRC.custom_attr_defs = [{
+        title: 'reserved_word',
+        definition_type: 'assessment',
+      }, {}];
+      let scope_ = Component.prototype.scope({}, parentScope);
+      isReservedWord = scope_.isReservedTitle;
+    });
+
+    it('has not to allow to input reserved word', function () {
+      expect(isReservedWord('reserved_word')).toEqual(true);
+    });
+
+    it('has to allow to input unreserved word', function () {
+      expect(isReservedWord('any_other_word')).toEqual(false);
+    });
+  });
+
   describe('isDublicateTitle() method', function () {
-    let isDublicateTitle;  // the method under test
+    let isDublicateTitle; // the method under test
     let result;
     let selectedTitle;
     let fields;
@@ -217,7 +267,7 @@ describe('GGRC.Components.addTemplateField', function () {
   });
 
   describe('isInvalidValues() method', function () {
-    let isInvalidValues;  // the method under test
+    let isInvalidValues; // the method under test
     let valueAttrs;
     let result;
     let parentScope;

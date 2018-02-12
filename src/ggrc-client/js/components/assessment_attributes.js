@@ -78,9 +78,9 @@
         // It's not nice way to rely on DOM for sorting,
         // but it was easiest for implementation
         this.scope.fields.replace(_.map(sortables,
-           function (item) {
-             return $(item).data('field');
-           }
+          function (item) {
+            return $(item).data('field');
+          }
         ));
       },
     },
@@ -232,11 +232,13 @@
           let values = _.splitTrim(selected.values, {
             unique: true,
           }).join(',');
+
           ev.preventDefault();
           scope.attr('selected.invalidTitle', false);
           scope.attr('selected.emptyTitle', false);
           scope.attr('selected.dublicateTitle', false);
           scope.attr('selected.invalidValues', false);
+          scope.attr('selected.reservedWord', false);
 
           if (this.isEmptyTitle(title)) {
             this.attr('selected.invalidTitle', true);
@@ -245,6 +247,11 @@
           } else if (this.isDublicateTitle(fields, title)) {
             this.attr('selected.invalidTitle', true);
             this.attr('selected.dublicateTitle', true);
+            invalidInput = true;
+          }
+          if (this.isReservedTitle(title)) {
+            scope.attr('selected.reservedWord', true);
+            scope.attr('selected.invalidTitle', true);
             invalidInput = true;
           }
           if (this.isInvalidValues(scope.valueAttrs, type, values)) {
@@ -274,12 +281,26 @@
         },
         isDublicateTitle: function (fields, selectedTitle) {
           let duplicateField = _.some(fields, function (item) {
-            return item.title === selectedTitle && !item._pending_delete;
+            return item.title === selectedTitle &&
+              !item._pending_delete;
           });
           return fields.length && duplicateField;
         },
         isEmptyTitle: function (selectedTitle) {
           return !selectedTitle;
+        },
+        isReservedTitle: function (value) {
+          let title = value.toLowerCase();
+
+          let modelAttr = GGRC.model_attr_defs.Assessment.filter(
+            (attr) => attr.display_name && attr.display_name.toLowerCase() === title);
+
+          let customAttr = GGRC.custom_attr_defs
+            .filter((attr) => attr.definition_type ?
+              attr.definition_type === 'assessment' &&
+              attr.title.toLowerCase() === title : false);
+
+          return Boolean(modelAttr.length || customAttr.length);
         },
       });
     },
